@@ -1,0 +1,33 @@
+dependencies:
+- name: redis
+  repository: https://charts.bitnami.com/bitnami
+  version: 18.9.1
+- name: redis
+  repository: https://charts.bitnami.com/bitnami
+  version: 18.9.1
+- name: postgresql
+  repository: https://charts.bitnami.com/bitnami
+  version: 13.4.3
+- name: grafana
+  repository: https://grafana.github.io/helm-charts
+  version: 7.3.0
+- name: victoria-metrics-single
+  repository: https://victoriametrics.github.io/helm-charts
+  version: 0.9.15
+- name: victoria-metrics-agent
+  repository: https://victoriametrics.github.io/helm-charts
+  version: 0.9.17
+- name: victoria-logs-single
+  repository: https://victoriametrics.github.io/helm-charts
+  version: 0.3.4
+- name: fluent-bit
+  repository: https://fluent.github.io/helm-charts
+  version: 0.43.0
+- name: minio
+  repository: https://charts.bitnami.com/bitnami
+  version: 14.8.2
+- name: common
+  repository: oci://registry-1.docker.io/bitnamicharts
+  version: 2.31.3
+digest: sha256:f5255eab65c0742d2eb23cf262ca968380933888833944ae428b3cef5c3df7b4
+generated: "2025-06-26T15:12:31.000713663-03:00"

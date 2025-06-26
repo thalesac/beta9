@@ -1,0 +1,68 @@
+# Copyright Broadcom, Inc. All Rights Reserved.
+# SPDX-License-Identifier: APACHE-2.0
+
+annotations:
+  category: Infrastructure
+  licenses: Apache-2.0
+apiVersion: v2
+appVersion: "0.2.0"
+dependencies:
+  - name: redis
+    version: 18.9.1
+    repository: https://charts.bitnami.com/bitnami
+    condition: redis.enabled
+  - alias: juicefs-redis
+    name: redis
+    version: 18.9.1
+    repository: https://charts.bitnami.com/bitnami
+    condition: juicefs-redis.enabled
+  - name: postgresql
+    version: 13.4.3
+    repository: https://charts.bitnami.com/bitnami
+    condition: postgresql.enabled
+  - name: grafana
+    version: 7.3.0
+    repository: https://grafana.github.io/helm-charts
+    condition: metrics.enabled
+  - name: victoria-metrics-single
+    version: 0.9.15
+    repository: https://victoriametrics.github.io/helm-charts
+    condition: metrics.enabled
+  - name: victoria-metrics-agent
+    version: 0.9.17
+    repository: https://victoriametrics.github.io/helm-charts
+    condition: metrics.enabled
+  - name: victoria-logs-single
+    version: 0.3.4
+    repository: https://victoriametrics.github.io/helm-charts
+    condition: metrics.enabled
+  - name: fluent-bit
+    version: 0.43.0
+    repository: https://fluent.github.io/helm-charts
+    condition: metrics.enabled
+  - name: minio
+    version: 14.8.2
+    repository: https://charts.bitnami.com/bitnami
+    condition: minio.enabled
+  - name: common
+    repository: oci://registry-1.docker.io/bitnamicharts
+    tags:
+      - bitnami-common
+    version: 2.31.3
+description: Beta9 is an open-source platform for running scalable serverless GPU workloads across cloud providers.
+home: https://beta9.dev
+icon: https://raw.githubusercontent.com/beam-cloud/beta9/main/assets/logo.png
+keywords:
+  - serverless
+  - gpu
+  - ml
+  - ai
+  - compute
+  - containers
+maintainers:
+  - name: Beta9 Team
+    url: https://github.com/beam-cloud/beta9
+name: beta9
+sources:
+  - https://github.com/beam-cloud/beta9
+version: 0.2.0
