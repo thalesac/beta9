@@ -1,7 +1,3 @@
-{{/*
-Copyright Broadcom, Inc. All Rights Reserved.
-SPDX-License-Identifier: APACHE-2.0
-*/}}
 
 {{/* vim: set filetype=mustache: */}}
 
@@ -45,7 +41,8 @@ Returns an init-container that waits for backend services to be ready
 */}}
 {{- define "beta9.initContainers.waitOnBackends" -}}
 - name: wait-on-backends
-  image: busybox:1.37.0
+  image: {{ include "beta9.waitOnBackends.image" . }}
+  imagePullPolicy: {{ .Values.defaultInitContainers.waitOnBackends.image.pullPolicy | quote }}
   command:
     - sh
     - -c

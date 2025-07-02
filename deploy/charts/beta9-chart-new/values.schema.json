@@ -1,0 +1,802 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "Beta9 Chart Values Schema",
+  "description": "JSON Schema for Beta9 Helm chart values.yaml configuration",
+  "properties": {
+    "global": {
+      "type": "object",
+      "description": "Global Docker image parameters",
+      "properties": {
+        "imageRegistry": {
+          "type": "string",
+          "description": "Global Docker Image registry"
+        },
+        "imagePullSecrets": {
+          "type": "array",
+          "description": "Global Docker registry secret names as an array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "defaultStorageClass": {
+          "type": "string",
+          "description": "Global default StorageClass for Persistent Volume(s)"
+        },
+        "security": {
+          "type": "object",
+          "properties": {
+            "allowInsecureImages": {
+              "type": "boolean",
+              "description": "Allows skipping image verification"
+            }
+          }
+        },
+        "compatibility": {
+          "type": "object",
+          "properties": {
+            "openshift": {
+              "type": "object",
+              "properties": {
+                "adaptSecurityContext": {
+                  "type": "string",
+                  "enum": ["auto", "force", "disabled"],
+                  "description": "Adapt the securityContext sections for Openshift compatibility"
+                }
+              }
+            },
+            "omitEmptySeLinuxOptions": {
+              "type": "boolean",
+              "description": "If set to true, removes the seLinuxOptions from the securityContexts when it is set to an empty object"
+            }
+          }
+        }
+      }
+    },
+    "kubeVersion": {
+      "type": "string",
+      "description": "Override Kubernetes version reported by .Capabilities"
+    },
+    "apiVersions": {
+      "type": "array",
+      "description": "Override Kubernetes API versions reported by .Capabilities",
+      "items": {
+        "type": "string"
+      }
+    },
+    "nameOverride": {
+      "type": "string",
+      "description": "String to partially override common.names.name"
+    },
+    "fullnameOverride": {
+      "type": "string",
+      "description": "String to fully override common.names.fullname"
+    },
+    "namespaceOverride": {
+      "type": "string",
+      "description": "String to fully override common.names.namespace"
+    },
+    "commonLabels": {
+      "type": "object",
+      "description": "Labels to add to all deployed objects",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "commonAnnotations": {
+      "type": "object",
+      "description": "Annotations to add to all deployed objects",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "clusterDomain": {
+      "type": "string",
+      "description": "Kubernetes cluster domain name",
+      "default": "cluster.local"
+    },
+    "extraDeploy": {
+      "type": "array",
+      "description": "Array of extra objects to deploy with the release",
+      "items": {
+        "type": "object"
+      }
+    },
+    "config": {
+      "type": "object",
+      "description": "Beta9's application configuration",
+      "properties": {
+        "clusterName": {
+          "type": "string",
+          "description": "Beta9 cluster name"
+        },
+        "debugMode": {
+          "type": "boolean",
+          "description": "Enable debug mode"
+        },
+        "prettyLogs": {
+          "type": "boolean",
+          "description": "Enable pretty logs"
+        },
+        "database": {
+          "type": "object",
+          "properties": {
+            "postgres": {
+              "type": "object",
+              "properties": {
+                "host": {"type": "string"},
+                "port": {"type": "integer", "minimum": 1, "maximum": 65535},
+                "username": {"type": "string"},
+                "password": {"type": "string"},
+                "name": {"type": "string"},
+                "timezone": {"type": "string"},
+                "encryptionKey": {"type": "string"}
+              }
+            },
+            "redis": {
+              "type": "object",
+              "properties": {
+                "mode": {"type": "string", "enum": ["single", "cluster"]},
+                "addrs": {
+                  "type": "array",
+                  "items": {"type": "string"}
+                },
+                "password": {"type": "string"},
+                "enableTLS": {"type": "boolean"},
+                "insecureSkipVerify": {"type": "boolean"},
+                "dialTimeout": {"type": "string"}
+              }
+            }
+          }
+        },
+        "storage": {
+          "type": "object",
+          "properties": {
+            "mode": {"type": "string", "enum": ["juicefs", "local"]},
+            "fsName": {"type": "string"},
+            "fsPath": {"type": "string"},
+            "objectPath": {"type": "string"}
+          }
+        },
+        "gateway": {
+          "type": "object",
+          "properties": {
+            "host": {"type": "string"},
+            "invokeURLType": {"type": "string", "enum": ["path", "subdomain"]},
+            "grpc": {
+              "type": "object",
+              "properties": {
+                "externalHost": {"type": "string"},
+                "externalPort": {"type": "integer"},
+                "tls": {"type": "boolean"},
+                "port": {"type": "integer"},
+                "maxRecvMsgSize": {"type": "integer"},
+                "maxSendMsgSize": {"type": "integer"}
+              }
+            },
+            "http": {
+              "type": "object",
+              "properties": {
+                "externalHost": {"type": "string"},
+                "externalPort": {"type": "integer"},
+                "tls": {"type": "boolean"},
+                "port": {"type": "integer"},
+                "enablePrettyLogs": {"type": "boolean"}
+              }
+            },
+            "shutdownTimeout": {"type": "string"}
+          }
+        }
+      }
+    },
+    "diagnosticMode": {
+      "type": "object",
+      "description": "Diagnostic mode configuration",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable diagnostic mode (all probes will be disabled)"
+        },
+        "command": {
+          "type": "array",
+          "description": "Command to override all containers in the chart release",
+          "items": {
+            "type": "string"
+          }
+        },
+        "args": {
+          "type": "array",
+          "description": "Args to override all containers in the chart release",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "gateway": {
+      "type": "object",
+      "description": "Gateway service component for Beta9",
+      "properties": {
+        "image": {
+          "type": "object",
+          "properties": {
+            "registry": {
+              "type": "string",
+              "description": "Gateway image registry"
+            },
+            "repository": {
+              "type": "string",
+              "description": "Gateway image repository"
+            },
+            "tag": {
+              "type": "string",
+              "description": "Gateway image tag"
+            },
+            "digest": {
+              "type": "string",
+              "description": "Gateway image digest"
+            },
+            "pullPolicy": {
+              "type": "string",
+              "enum": ["Always", "IfNotPresent", "Never"],
+              "description": "Gateway image pull policy"
+            },
+            "pullSecrets": {
+              "type": "array",
+              "description": "Gateway image pull secrets",
+              "items": {
+                "type": "string"
+              }
+            },
+            "debug": {
+              "type": "boolean",
+              "description": "Enable Gateway image debug mode"
+            }
+          }
+        },
+        "replicaCount": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Number of Gateway replicas to deploy"
+        },
+        "containerPorts": {
+          "type": "object",
+          "properties": {
+            "grpc": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 65535,
+              "description": "Gateway GRPC container port"
+            },
+            "http": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 65535,
+              "description": "Gateway HTTP container port"
+            },
+            "metrics": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 65535,
+              "description": "Gateway metrics container port"
+            }
+          }
+        },
+        "livenessProbe": {
+          "type": "object",
+          "properties": {
+            "enabled": {"type": "boolean"},
+            "initialDelaySeconds": {"type": "integer", "minimum": 0},
+            "periodSeconds": {"type": "integer", "minimum": 1},
+            "timeoutSeconds": {"type": "integer", "minimum": 1},
+            "failureThreshold": {"type": "integer", "minimum": 1},
+            "successThreshold": {"type": "integer", "minimum": 1}
+          }
+        },
+        "readinessProbe": {
+          "type": "object",
+          "properties": {
+            "enabled": {"type": "boolean"},
+            "initialDelaySeconds": {"type": "integer", "minimum": 0},
+            "periodSeconds": {"type": "integer", "minimum": 1},
+            "timeoutSeconds": {"type": "integer", "minimum": 1},
+            "failureThreshold": {"type": "integer", "minimum": 1},
+            "successThreshold": {"type": "integer", "minimum": 1}
+          }
+        },
+        "startupProbe": {
+          "type": "object",
+          "properties": {
+            "enabled": {"type": "boolean"},
+            "initialDelaySeconds": {"type": "integer", "minimum": 0},
+            "periodSeconds": {"type": "integer", "minimum": 1},
+            "timeoutSeconds": {"type": "integer", "minimum": 1},
+            "failureThreshold": {"type": "integer", "minimum": 1},
+            "successThreshold": {"type": "integer", "minimum": 1}
+          }
+        },
+        "resourcesPreset": {
+          "type": "string",
+          "enum": ["none", "nano", "micro", "small", "medium", "large", "xlarge", "2xlarge"],
+          "description": "Set Gateway container resources according to one common preset"
+        },
+        "resources": {
+          "type": "object",
+          "description": "Set Gateway container requests and limits for different resources",
+          "properties": {
+            "requests": {
+              "type": "object",
+              "properties": {
+                "cpu": {"type": ["string", "number"]},
+                "memory": {"type": "string"}
+              }
+            },
+            "limits": {
+              "type": "object",
+              "properties": {
+                "cpu": {"type": ["string", "number"]},
+                "memory": {"type": "string"}
+              }
+            }
+          }
+        },
+        "nodeSelector": {
+          "type": "object",
+          "description": "Node labels for Gateway pods assignment",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "tolerations": {
+          "type": "array",
+          "description": "Tolerations for Gateway pods assignment",
+          "items": {
+            "type": "object"
+          }
+        },
+        "affinity": {
+          "type": "object",
+          "description": "Affinity for Gateway pods assignment"
+        }
+      }
+    },
+    "service": {
+      "type": "object",
+      "description": "Gateway service parameters",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["ClusterIP", "NodePort", "LoadBalancer", "ExternalName"],
+          "description": "Gateway service type"
+        },
+        "ports": {
+          "type": "object",
+          "properties": {
+            "grpc": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 65535,
+              "description": "Gateway service GRPC port"
+            },
+            "http": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 65535,
+              "description": "Gateway service HTTP port"
+            },
+            "metrics": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 65535,
+              "description": "Gateway service metrics port"
+            }
+          }
+        },
+        "annotations": {
+          "type": "object",
+          "description": "Additional custom annotations for Gateway service",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "networkPolicy": {
+      "type": "object",
+      "description": "Network Policies configuration",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Specifies whether a NetworkPolicy should be created"
+        },
+        "allowExternal": {
+          "type": "boolean",
+          "description": "Don't require server label for connections"
+        },
+        "allowExternalEgress": {
+          "type": "boolean",
+          "description": "Allow the pod to access any range of port and all destinations"
+        }
+      }
+    },
+    "ingress": {
+      "type": "object",
+      "description": "Beta9 Gateway ingress parameters",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable ingress record generation for Beta9 Gateway"
+        },
+        "pathType": {
+          "type": "string",
+          "enum": ["Exact", "Prefix", "ImplementationSpecific"],
+          "description": "Ingress path type"
+        },
+        "hostname": {
+          "type": "string",
+          "description": "Default host for the ingress record"
+        },
+        "ingressClassName": {
+          "type": "string",
+          "description": "IngressClass that will be used to implement the Ingress"
+        },
+        "path": {
+          "type": "string",
+          "description": "Default path for the ingress record"
+        },
+        "annotations": {
+          "type": "object",
+          "description": "Additional annotations for the Ingress resource",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "tls": {
+          "type": "boolean",
+          "description": "Enable TLS configuration for the host"
+        },
+        "selfSigned": {
+          "type": "boolean",
+          "description": "Create a TLS secret using self-signed certificates"
+        }
+      }
+    },
+    "persistence": {
+      "type": "object",
+      "description": "Enable persistence using Persistent Volume Claims",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable persistence using Persistent Volume Claims"
+        },
+        "mountPath": {
+          "type": "string",
+          "description": "Path to mount the volume at"
+        },
+        "storageClass": {
+          "type": "string",
+          "description": "Storage class of backing PVC"
+        },
+        "accessModes": {
+          "type": "array",
+          "description": "Persistent Volume Access Modes",
+          "items": {
+            "type": "string",
+            "enum": ["ReadWriteOnce", "ReadOnlyMany", "ReadWriteMany"]
+          }
+        },
+        "size": {
+          "type": "string",
+          "description": "Size of data volume",
+          "pattern": "^[0-9]+[KMGT]i?$"
+        },
+        "existingClaim": {
+          "type": "string",
+          "description": "The name of an existing PVC to use for persistence"
+        }
+      }
+    },
+    "defaultInitContainers": {
+      "type": "object",
+      "description": "Default init containers configuration",
+      "properties": {
+        "volumePermissions": {
+          "type": "object",
+          "description": "Volume permissions init container configuration",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "description": "Enable init container that adapts the owner/group of the PV mount(s) point(s)"
+            },
+            "image": {
+              "type": "object",
+              "properties": {
+                "registry": {
+                  "type": "string",
+                  "description": "volume-permissions init-containers' image registry"
+                },
+                "repository": {
+                  "type": "string",
+                  "description": "volume-permissions init-containers' image repository"
+                },
+                "tag": {
+                  "type": "string",
+                  "description": "volume-permissions init-containers' image tag"
+                },
+                "digest": {
+                  "type": "string",
+                  "description": "volume-permissions init-containers' image digest"
+                },
+                "pullPolicy": {
+                  "type": "string",
+                  "enum": ["Always", "IfNotPresent", "Never"],
+                  "description": "volume-permissions init-containers' image pull policy"
+                },
+                "pullSecrets": {
+                  "type": "array",
+                  "description": "volume-permissions init-containers' image pull secrets",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "resourcesPreset": {
+              "type": "string",
+              "enum": ["none", "nano", "micro", "small", "medium", "large", "xlarge", "2xlarge"],
+              "description": "Set volume-permissions init container resources according to one common preset"
+            },
+            "resources": {
+              "type": "object",
+              "description": "Set volume-permissions init container requests and limits for different resources",
+              "properties": {
+                "requests": {
+                  "type": "object",
+                  "properties": {
+                    "cpu": {"type": ["string", "number"]},
+                    "memory": {"type": "string"}
+                  }
+                },
+                "limits": {
+                  "type": "object",
+                  "properties": {
+                    "cpu": {"type": ["string", "number"]},
+                    "memory": {"type": "string"}
+                  }
+                }
+              }
+            }
+          }
+        },
+        "waitOnBackends": {
+          "type": "object",
+          "description": "Wait-on-backends init container configuration",
+          "properties": {
+            "image": {
+              "type": "object",
+              "description": "Busybox image used for service readiness checks",
+              "properties": {
+                "registry": {
+                  "type": "string",
+                  "description": "Wait-on-backends init-container image registry"
+                },
+                "repository": {
+                  "type": "string",
+                  "description": "Wait-on-backends init-container image repository"
+                },
+                "tag": {
+                  "type": "string",
+                  "description": "Wait-on-backends init-container image tag"
+                },
+                "digest": {
+                  "type": "string",
+                  "description": "Wait-on-backends init-container image digest"
+                },
+                "pullPolicy": {
+                  "type": "string",
+                  "enum": ["Always", "IfNotPresent", "Never"],
+                  "description": "Wait-on-backends init-container image pull policy"
+                },
+                "pullSecrets": {
+                  "type": "array",
+                  "description": "Wait-on-backends init-container image pull secrets",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "rbac": {
+      "type": "object",
+      "description": "RBAC configuration",
+      "properties": {
+        "create": {
+          "type": "boolean",
+          "description": "Specifies whether RBAC resources should be created"
+        },
+        "rules": {
+          "type": "array",
+          "description": "Custom RBAC rules to set",
+          "items": {
+            "type": "object",
+            "properties": {
+              "apiGroups": {
+                "type": "array",
+                "items": {"type": "string"}
+              },
+              "resources": {
+                "type": "array",
+                "items": {"type": "string"}
+              },
+              "verbs": {
+                "type": "array",
+                "items": {"type": "string"}
+              }
+            }
+          }
+        }
+      }
+    },
+    "serviceAccount": {
+      "type": "object",
+      "description": "ServiceAccount configuration",
+      "properties": {
+        "create": {
+          "type": "boolean",
+          "description": "Specifies whether a ServiceAccount should be created"
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the ServiceAccount to use"
+        },
+        "annotations": {
+          "type": "object",
+          "description": "Additional Service Account annotations",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "automountServiceAccountToken": {
+          "type": "boolean",
+          "description": "Automount service account token"
+        }
+      }
+    },
+    "metrics": {
+      "type": "object",
+      "description": "Prometheus metrics configuration",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable the export of Prometheus metrics"
+        },
+        "serviceMonitor": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "description": "Creates a Prometheus Operator ServiceMonitor"
+            },
+            "namespace": {
+              "type": "string",
+              "description": "Namespace in which Prometheus is running"
+            },
+            "interval": {
+              "type": "string",
+              "description": "Interval at which metrics should be scraped"
+            },
+            "scrapeTimeout": {
+              "type": "string",
+              "description": "Timeout after which the scrape is ended"
+            }
+          }
+        }
+      }
+    },
+    "externalDatabase": {
+      "type": "object",
+      "description": "External Database Configuration",
+      "properties": {
+        "host": {
+          "type": "string",
+          "description": "External PostgreSQL host"
+        },
+        "port": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535,
+          "description": "External PostgreSQL port number"
+        },
+        "user": {
+          "type": "string",
+          "description": "External PostgreSQL username"
+        },
+        "password": {
+          "type": "string",
+          "description": "External PostgreSQL password"
+        },
+        "database": {
+          "type": "string",
+          "description": "External PostgreSQL database name"
+        }
+      }
+    },
+    "externalRedis": {
+      "type": "object",
+      "description": "External Redis Configuration",
+      "properties": {
+        "host": {
+          "type": "string",
+          "description": "External Redis host"
+        },
+        "port": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535,
+          "description": "External Redis port number"
+        },
+        "password": {
+          "type": "string",
+          "description": "External Redis password"
+        }
+      }
+    },
+    "postgresql": {
+      "type": "object",
+      "description": "PostgreSQL subchart configuration",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Deploy PostgreSQL subchart"
+        }
+      }
+    },
+    "redis": {
+      "type": "object",
+      "description": "Redis subchart configuration",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Deploy Redis subchart"
+        }
+      }
+    },
+    "juicefs-redis": {
+      "type": "object",
+      "description": "JuiceFS Redis subchart configuration",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Deploy JuiceFS Redis subchart"
+        }
+      }
+    },
+    "grafana": {
+      "type": "object",
+      "description": "Grafana subchart configuration",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Deploy Grafana subchart"
+        }
+      }
+    },
+    "minio": {
+      "type": "object",
+      "description": "Minio configuration for S3-compatible storage",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Deploy Minio subchart for S3-compatible storage"
+        }
+      }
+    }
+  },
+  "required": [
+    "config"
+  ]
+}

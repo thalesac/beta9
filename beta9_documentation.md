@@ -77,6 +77,18 @@ The Worker is the data plane component of the platform. Workers are responsible 
 *   **State Reporting:** Reports its status, resource capacity, and health back to the Gateway via gRPC.
 *   **Checkpoint/Restore (CRIU):** The codebase includes support for CRIU, which allows for checkpointing and restoring running containers. This can be used for features like fast container startup or live migration.
 
+### 3.3. Runner
+
+The Runner is not a separate service, but rather the execution environment itself. It's a base Docker image that contains a specific set of pre-installed dependencies, most importantly a specific version of Python. When a user defines a task, they specify an `Image` which corresponds to a specific Runner image.
+
+**How Workers and Runners Interact:**
+
+1.  The **Worker** receives a task request from the Gateway, which specifies a required environment (e.g., Python 3.11).
+2.  The Worker pulls the pre-built **Runner** image that is tagged for that environment.
+3.  The Worker then takes the user's code, injects it into a new container based on that **Runner** image, and uses `runc` to execute it.
+
+This separation of the **Worker** (the manager) and the **Runner** (the environment) is what allows Beta9 to start containers very quickly.
+
 ## 4. Dependencies
 
 The Beta9 platform relies on several external services for its operation:
@@ -102,6 +114,13 @@ To deploy and run Beta9, you need:
 *   **Container Registry:** A registry (like AWS ECR) is needed to store the Docker images for the Gateway, Worker, and other components.
 *   **Object Storage (Optional):** If `Fluent Bit` is enabled for log shipping, an S3-compatible object store is required to store worker logs.
 
+### Worker Deployments: Static vs. Dynamic
+
+The Beta9 Helm chart includes an optional worker deployment. Here's the difference between enabling and disabling it:
+
+*   **Dynamic Workers (worker.enabled: false):** This is the default, "serverless" mode. The Gateway's scheduler will dynamically launch workers as Kubernetes Jobs when tasks arrive. This is highly resource-efficient and allows the cluster to scale down to zero, but it can introduce a "cold start" latency as new pods are created.
+*   **Static Worker Pool (worker.enabled: true):** This creates a pre-warmed, static pool of workers. The Helm chart will create a Kubernetes Deployment with a fixed number of worker pods that are always running and waiting for tasks. This provides lower latency for task execution, as the Gateway can immediately assign tasks to idle workers.
+
 ## 6. Usage Flow
 
 A typical usage flow of the Beta9 platform looks like this:
@@ -112,4 +131,18 @@ A typical usage flow of the Beta9 platform looks like this:
 4.  **Task Assignment:** The Scheduler sends a container creation request to the chosen **Worker**.
 5.  **Execution:** The **Worker** pulls the container image (potentially using **JuiceFS** or a blob cache for speed) and uses `runc` to start the container.
 6.  **Monitoring:** The **Worker** monitors the container and streams logs and status updates back to the **Gateway**. The user can query the Gateway to see the status of their task.
-7.  **Completion:** Once the task is finished, the **Worker** reports the completion to the **Gateway** and becomes available for new tasks. 
+7.  **Completion:** Once the task is finished, the **Worker** reports the completion to the **Gateway** and becomes available for new tasks.
+
+## 7. Authentication
+
+Authentication is handled by the Gateway. The primary authentication mechanism is token-based.
+
+*   **Client Authentication:** Clients (like the SDK) must include a valid authentication token in their requests to the Gateway. This token is typically an API key associated with a user or a service account.
+*   **Worker Authentication:** Workers also need to authenticate with the Gateway. This is handled automatically by the platform:
+    1.  When the Gateway's scheduler provisions a new worker, it generates a unique, single-use token for that worker.
+    2.  The scheduler securely stores a hash of this token in the PostgreSQL database.
+    3.  The raw token is passed to the worker via the `WORKER_TOKEN` environment variable.
+    4.  The worker includes this token in the metadata of every gRPC call it makes to the Gateway.
+    5.  The Gateway's gRPC server uses an interceptor to validate the token. It hashes the incoming token and compares it against the stored hashes in the database.
+
+If a request is made to the Gateway without a valid token, it will be rejected with an "Unauthenticated" error. This is a security measure to ensure that only authorized clients can interact with the platform. 

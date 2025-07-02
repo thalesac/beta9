@@ -1,5 +1,3 @@
-# Copyright Broadcom, Inc. All Rights Reserved.
-# SPDX-License-Identifier: APACHE-2.0
 
 annotations:
   category: Infrastructure
@@ -49,9 +47,9 @@ dependencies:
     tags:
       - bitnami-common
     version: 2.31.3
-description: Beta9 is an open-source platform for running scalable serverless GPU workloads across cloud providers.
-home: https://beta9.dev
-icon: https://raw.githubusercontent.com/beam-cloud/beta9/main/assets/logo.png
+description: Beam.cloud Run AI Workloads at Scale
+home: https://beam.cloud
+icon: https://avatars.githubusercontent.com/u/126977053?s=200&v=4
 keywords:
   - serverless
   - gpu
@@ -60,7 +58,7 @@ keywords:
   - compute
   - containers
 maintainers:
-  - name: Beta9 Team
+  - name: Beam.cloud Team
     url: https://github.com/beam-cloud/beta9
 name: beta9
 sources:
