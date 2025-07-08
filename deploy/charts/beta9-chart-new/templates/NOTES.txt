@@ -6,21 +6,68 @@ APP VERSION: {{ .Chart.AppVersion }}
 
 1. Get the application URL by running these commands:
 {{- if .Values.ingress.enabled }}
+
+{{- if .Values.ingress.hostname }}
+  Beta9 HTTP API:
+  http{{ if .Values.ingress.tls }}s{{ end }}://{{ .Values.ingress.hostname }}{{ .Values.ingress.path }}
+{{- end }}
+
+{{- if and .Values.ingress.grpc.enabled .Values.ingress.grpc.hostname }}
+  Beta9 gRPC API:
+  grpc{{ if .Values.ingress.grpc.tls }}s{{ end }}://{{ .Values.ingress.grpc.hostname }}
+{{- end }}
+
 {{- range $host := .Values.ingress.extraHosts }}
+  Additional HTTP Host:
   http{{ if $.Values.ingress.tls }}s{{ end }}://{{ $host.name }}{{ .Values.ingress.path }}
 {{- end }}
+
+{{- range $host := .Values.ingress.grpc.extraHosts }}
+  Additional gRPC Host:
+  grpc{{ if $.Values.ingress.grpc.tls }}s{{ end }}://{{ $host.name }}
+{{- end }}
+
+  Both HTTP and gRPC use the same root domain (beta9.local) with different subdomains:
+{{- if .Values.ingress.hostname }}
+  <NGINX_INGRESS_IP> {{ .Values.ingress.hostname }}
+{{- end }}
+{{- if and .Values.ingress.grpc.enabled .Values.ingress.grpc.hostname }}
+  <NGINX_INGRESS_IP> {{ .Values.ingress.grpc.hostname }}
+{{- end }}
+
+  To get the NGINX Ingress Controller IP:
+  kubectl get svc -n ingress-nginx nginx-ingress-controller -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
+
+  Or for local testing, add to your /etc/hosts:
+{{- if .Values.ingress.hostname }}
+  127.0.0.1 {{ .Values.ingress.hostname }}
+{{- end }}
+{{- if and .Values.ingress.grpc.enabled .Values.ingress.grpc.hostname }}
+  127.0.0.1 {{ .Values.ingress.grpc.hostname }}
+{{- end }}
+
 {{- else if contains "NodePort" .Values.service.type }}
-  export NODE_PORT=$(kubectl get --namespace {{ include "common.names.namespace" . }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ include "common.names.fullname" . }})
+  export NODE_PORT_HTTP=$(kubectl get --namespace {{ include "common.names.namespace" . }} -o jsonpath="{.spec.ports[?(@.name=='http')].nodePort}" services {{ include "common.names.fullname" . }}-gateway)
+  export NODE_PORT_GRPC=$(kubectl get --namespace {{ include "common.names.namespace" . }} -o jsonpath="{.spec.ports[?(@.name=='grpc')].nodePort}" services {{ include "common.names.fullname" . }}-gateway)
   export NODE_IP=$(kubectl get nodes --namespace {{ include "common.names.namespace" . }} -o jsonpath="{.items[0].status.addresses[0].address}")
-  echo http://$NODE_IP:$NODE_PORT
+  echo "HTTP API: http://$NODE_IP:$NODE_PORT_HTTP"
+  echo "gRPC API: grpc://$NODE_IP:$NODE_PORT_GRPC"
 {{- else if contains "LoadBalancer" .Values.service.type }}
      NOTE: It may take a few minutes for the LoadBalancer IP to be available.
-           You can watch the status of by running 'kubectl get --namespace {{ include "common.names.namespace" . }} svc -w {{ include "common.names.fullname" . }}'
-  export SERVICE_IP=$(kubectl get svc --namespace {{ include "common.names.namespace" . }} {{ include "common.names.fullname" . }} --template "{{"{{ range (index .status.loadBalancer.ingress 0) }}{{.}}{{ end }}"}}")
-  echo http://$SERVICE_IP:{{ .Values.service.ports.http }}
+           You can watch the status of by running 'kubectl get --namespace {{ include "common.names.namespace" . }} svc -w {{ include "common.names.fullname" . }}-gateway'
+  export SERVICE_IP=$(kubectl get svc --namespace {{ include "common.names.namespace" . }} {{ include "common.names.fullname" . }}-gateway --template "{{"{{ range (index .status.loadBalancer.ingress 0) }}{{.}}{{ end }}"}}")
+  echo "HTTP API: http://$SERVICE_IP:{{ .Values.service.ports.http }}"
+  echo "gRPC API: grpc://$SERVICE_IP:{{ .Values.service.ports.grpc }}"
 {{- else if contains "ClusterIP" .Values.service.type }}
   
-  kubectl --namespace {{ include "common.names.namespace" . }} port-forward svc/{{ include "common.names.fullname" . }}-gateway {{ .Values.service.ports.grpc }}:{{ .Values.service.ports.grpc }}
+  # Port forward for HTTP API:
+  kubectl --namespace {{ include "common.names.namespace" . }} port-forward svc/{{ include "common.names.fullname" . }}-gateway {{ .Values.service.ports.http }}:{{ .Values.service.ports.http }} &
+  
+  # Port forward for gRPC API:
+  kubectl --namespace {{ include "common.names.namespace" . }} port-forward svc/{{ include "common.names.fullname" . }}-gateway {{ .Values.service.ports.grpc }}:{{ .Values.service.ports.grpc }} &
+  
+  echo "HTTP API: http://localhost:{{ .Values.service.ports.http }}"
+  echo "gRPC API: grpc://localhost:{{ .Values.service.ports.grpc }}"
 {{- end }}
 
 Beta9 Gateway is running and ready to accept serverless GPU workloads!

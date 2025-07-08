@@ -22,31 +22,40 @@ dependencies:
     version: 7.3.0
     repository: https://grafana.github.io/helm-charts
     condition: metrics.enabled
-  - name: victoria-metrics-single
-    version: 0.9.15
-    repository: https://victoriametrics.github.io/helm-charts
-    condition: metrics.enabled
-  - name: victoria-metrics-agent
-    version: 0.9.17
-    repository: https://victoriametrics.github.io/helm-charts
-    condition: metrics.enabled
-  - name: victoria-logs-single
-    version: 0.3.4
-    repository: https://victoriametrics.github.io/helm-charts
-    condition: metrics.enabled
-  - name: fluent-bit
-    version: 0.43.0
-    repository: https://fluent.github.io/helm-charts
-    condition: metrics.enabled
+  # Metrics dependencies - commented out to avoid repository errors
+  # - name: victoria-metrics-single
+  #   version: 0.9.15
+  #   repository: https://victoriametrics.github.io/helm-charts
+  #   condition: metrics.enabled
+  # - name: victoria-metrics-agent
+  #   version: 0.9.17
+  #   repository: https://victoriametrics.github.io/helm-charts
+  #   condition: metrics.enabled
+  # - name: victoria-logs-single
+  #   version: 0.3.4
+  #   repository: https://victoriametrics.github.io/helm-charts
+  #   condition: metrics.enabled
+  # - name: fluent-bit
+  #   version: 0.43.0
+  #   repository: https://fluent.github.io/helm-charts
+  #   condition: metrics.enabled
   - name: minio
     version: 14.8.2
     repository: https://charts.bitnami.com/bitnami
     condition: minio.enabled
+  - name: cert-manager
+    version: v1.14.4
+    repository: https://charts.jetstack.io
+    condition: certManager.enabled
   - name: common
     repository: oci://registry-1.docker.io/bitnamicharts
     tags:
       - bitnami-common
     version: 2.31.3
+  - name: blobcache
+    version: 0.1.2
+    repository: file:///home/thales/beam/blobcache-v2/deploy/charts/blobcache
+    condition: blobcache.enabled
 description: Beam.cloud Run AI Workloads at Scale
 home: https://beam.cloud
 icon: https://avatars.githubusercontent.com/u/126977053?s=200&v=4

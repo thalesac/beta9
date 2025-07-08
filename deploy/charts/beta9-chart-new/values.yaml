@@ -252,7 +252,7 @@ config:
     terminationGracePeriod: 30
     cleanupWorkerInterval: 1m
     cleanupPendingWorkerAgeLimit: 10m
-    blobCacheEnabled: false
+    blobCacheEnabled: true
     containerLogLinesPerHour: 6000
     failover:
       enabled: true
@@ -279,6 +279,35 @@ config:
         idleConnTimeout: 10s
         dialTimeout: 2s
         keepAlive: 30s
+  ## Blobcache client configuration for workers
+  blobcache:
+    client:
+      token: ""
+      nTopHosts: 3
+      minRetryLengthBytes: 10000000
+      maxGetContentAttempts: 3
+      blobfs:
+        enabled: true
+        directIO: false
+        mountPoint: "/cache"
+        maxBackgroundTasks: 256
+        maxReadAheadKB: 1024
+        maxWriteKB: 1024
+        directMount: false
+        options:
+          - max_read=1048576
+    global:
+      defaultLocality: "default"
+      coordinatorHost: "beta9-blobcache:2049"
+      serverPort: 2049
+      discoveryIntervalS: 5
+      rttThresholdMilliseconds: 1000
+      hostStorageCapacityThresholdPct: 0.95
+      grpcDialTimeoutS: 1
+      grpcMessageSizeBytes: 1073741824
+      debugMode: false
+      prettyLogs: true
+
 ## Diagnostic mode
 ## @param diagnosticMode.enabled Enable diagnostic mode (all probes will be disabled and the command will be overridden)
 ## @param diagnosticMode.command Command to override all containers in the chart release
@@ -675,7 +704,6 @@ gateway:
 #     privileged: true
 #     readOnlyRootFilesystem: false
 #     runAsNonRoot: false
-#     runAsUser: 0
 #   ## @param worker.podSecurityContext Pod security context
 #   ##
 #   podSecurityContext:
@@ -829,21 +857,21 @@ networkPolicy:
 ingress:
   ## @param ingress.enabled Enable ingress record generation for Beta9 Gateway
   ##
-  enabled: false
+  enabled: true
   ## @param ingress.pathType Ingress path type
   ##
-  pathType: ImplementationSpecific
+  pathType: Prefix
   ## @param ingress.apiVersion Force Ingress API version (automatically detected if not set)
   ##
   apiVersion: ""
   ## @param ingress.hostname Default host for the ingress record
   ##
-  hostname: beta9.local
+  hostname: api.beta9.local
   ## @param ingress.ingressClassName IngressClass that will be be used to implement the Ingress (Kubernetes 1.18+)
   ## This is supported in Kubernetes 1.18+ and required if you have more than one IngressClass marked as the default for your cluster .
   ## ref: https://kubernetes.io/blog/2020/04/02/improvements-to-the-ingress-api-in-kubernetes-1.18/
   ##
-  ingressClassName: ""
+  ingressClassName: "nginx"
   ## @param ingress.path Default path for the ingress record
   ## NOTE: You may need to set this to '/*' in order to use this with ALB ingress controllers
   ##
@@ -856,7 +884,8 @@ ingress:
   ##   kubernetes.io/ingress.class: nginx
   ##   cert-manager.io/cluster-issuer: cluster-issuer-name
   ##
-  annotations: {}
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
   ## @param ingress.tls Enable TLS configuration for the host defined at `ingress.hostname` parameter
   ## TLS certificates will be retrieved from a TLS secret with name: `{{- printf "%s-tls" .Values.ingress.hostname }}`
   ## You can:
@@ -927,6 +956,41 @@ ingress:
   ##             name: http
   ##
   extraRules: []
+  ## gRPC Ingress configuration
+  ## @param ingress.grpc.enabled Enable gRPC ingress record generation for Beta9 Gateway
+  ## @param ingress.grpc.hostname Default host for the gRPC ingress record  
+  ## @param ingress.grpc.path Default path for the gRPC ingress record
+  ## @param ingress.grpc.pathType gRPC Ingress path type
+  ## @param ingress.grpc.annotations Additional annotations for the gRPC Ingress resource
+  ## @param ingress.grpc.tls Enable TLS configuration for the gRPC host
+  ## @param ingress.grpc.selfSigned Create a TLS secret for gRPC ingress record using self-signed certificates
+  ## @param ingress.grpc.extraHosts An array with additional hostname(s) for gRPC ingress
+  ## @param ingress.grpc.extraTls TLS configuration for additional gRPC hostname(s)
+  ## @param ingress.grpc.extraRules Additional rules for gRPC ingress
+  ##
+  grpc:
+    enabled: true
+    hostname: grpc.beta9.local
+    path: /
+    pathType: Prefix
+    ## TLS is REQUIRED for gRPC over nginx-ingress
+    ## For cert-manager integration, add cert-manager annotations:
+    ## annotations:
+    ##   cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    ##   cert-manager.io/acme-challenge-type: http01
+    ## For custom TLS behavior:
+    ## annotations:
+    ##   nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    ##   nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    annotations: {}
+    ## Enable TLS for gRPC (required for gRPC over nginx-ingress)
+    tls: true
+    ## Create self-signed certificates if cert-manager is not available
+    ## Set to false if using cert-manager or providing custom TLS secrets
+    selfSigned: true
+    extraHosts: []
+    extraTls: []
+    extraRules: []
 
 ## @section Persistence Parameters
 ##
@@ -1344,3 +1408,117 @@ minio:
   persistence:
     enabled: true
     size: 10Gi
+
+## Blobcache configuration for distributed caching
+## ref: https://github.com/beam-cloud/blobcache-v2/deploy/charts/blobcache/values.yaml
+##
+blobcache:
+  ## @param blobcache.enabled Deploy Blobcache subchart
+  ##
+  enabled: true
+  
+  ## Override Redis dependency to use internal Redis (disable internal Redis, use beta9's Redis)
+  redis:
+    enabled: false
+    
+  ## Configure external Redis (use beta9's Redis instance with different database)
+  externalRedis:
+    host: "redis-master"
+    port: 6379
+    password: ""
+    database: 1  # Use different database than beta9 (which uses default DB 0)
+    tls: false
+    
+  ## Blobcache server configuration
+  config:
+    server:
+      ## Run as coordinator mode (not slave)
+      mode: "coordinator"
+      token: ""
+      diskCacheDir: "/blobcache-data"
+      diskCacheMaxUsagePct: 0.95
+      pageSizeBytes: 4000000
+      maxCachePct: 60
+      objectTtlS: 3600
+      s3DownloadConcurrency: 16
+      s3DownloadChunkSize: 64000000
+      metadata:
+        mode: "default"
+      ## Use default sources from blobcache chart (already configured for minio)
+      sources: []
+      
+    ## Blobcache client configuration  
+    client:
+      token: ""
+      nTopHosts: 3
+      minRetryLengthBytes: 10000000
+      maxGetContentAttempts: 3
+      blobfs:
+        enabled: true
+        directIO: false
+        mountPoint: "/cache"
+        maxBackgroundTasks: 256
+        maxReadAheadKB: 1024
+        maxWriteKB: 1024
+        directMount: false
+        options:
+          - max_read=1048576
+    global:
+      defaultLocality: "default"
+      coordinatorHost: "beta9-blobcache:2049"
+      serverPort: 2049
+      discoveryIntervalS: 5
+      rttThresholdMilliseconds: 1000
+      hostStorageCapacityThresholdPct: 0.95
+      grpcDialTimeoutS: 1
+      grpcMessageSizeBytes: 1073741824
+      debugMode: false
+      prettyLogs: true
+      
+    ## Metrics configuration
+    metrics:
+      pushIntervalS: 30
+      url: ""
+      username: ""
+      password: ""
+      
+  ## Storage configuration
+  persistence:
+    enabled: true
+    size: 50Gi
+    
+  ## Service configuration
+  service:
+    type: ClusterIP
+    ports:
+      grpc: 2049
+
+## Cert-manager configuration for automatic TLS certificate management
+## ref: https://cert-manager.io/docs/configuration/
+##
+certManager:
+  ## @param certManager.enabled Deploy cert-manager subchart for automatic TLS certificate management
+  ##
+  enabled: false
+  ## @param certManager.installCRDs Install cert-manager CRDs
+  ##
+  installCRDs: true
+  ## Default cluster issuer configuration
+  ## When enabled, creates a default ClusterIssuer for Let's Encrypt certificates
+  ##
+  clusterIssuer:
+    ## @param certManager.clusterIssuer.create Create a default ClusterIssuer
+    ##
+    create: false
+    ## @param certManager.clusterIssuer.name Name of the ClusterIssuer to create
+    ##
+    name: "letsencrypt-prod"
+    ## @param certManager.clusterIssuer.email Email address for Let's Encrypt registration
+    ##
+    email: ""
+    ## @param certManager.clusterIssuer.server Let's Encrypt server URL
+    ##
+    server: "https://acme-v02.api.letsencrypt.org/directory"
+    ## @param certManager.clusterIssuer.privateKeySecretRef Secret name to store the private key
+    ##
+    privateKeySecretRef: "letsencrypt-prod-private-key"
